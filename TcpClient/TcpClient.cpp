@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <winsock2.h>
 #include <Ws2tcpip.h>
+#include <iostream>
 #pragma comment(lib, "ws2_32")
 //#pragma warning(disable:4996) 
 
@@ -56,6 +57,11 @@ int _tmain(int argc, _TCHAR* argv[])
 		// receive echo message from the server
 		// echo message size is fixed to 128 byte, refer server code ::send 
 		::recv(hSocket, szBuffer, sizeof(szBuffer), 0);
+		//printf("\x1b[2K");
+		//puts("\x1b[2K");
+		//fflush(stdout);
+		std::cout << "\x1b[1A";
+		std::cout << "\x1b[2K";
 		printf("From server: %s\n", szBuffer);
 	}
 
