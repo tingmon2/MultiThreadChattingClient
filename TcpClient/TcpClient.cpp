@@ -57,12 +57,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		// receive echo message from the server
 		// echo message size is fixed to 128 byte, refer server code ::send 
 		::recv(hSocket, szBuffer, sizeof(szBuffer), 0);
-		//printf("\x1b[2K");
-		//puts("\x1b[2K");
-		//fflush(stdout);
-		std::cout << "\x1b[1A";
-		std::cout << "\x1b[2K";
-		printf("From server: %s\n", szBuffer);
+		std::cout << "\x1b[1A"; // move cursor to upper line
+		std::cout << "\x1b[2K"; // delete the entered line
+		printf("\n", szBuffer); // print message echoed from the server. make it clean!
 	}
 
 	// 5. close listening socket
