@@ -2,8 +2,25 @@
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <iostream>
+#include <stdio.h>
 #pragma comment(lib, "ws2_32")
 //#pragma warning(disable:4996) 
+
+// receive broadcasted message from the server
+// message size is fixed to 128 byte, refer server code ::send 
+DWORD WINAPI threadFunction(LPVOID pParam)
+{
+	SOCKET recvSocket = (SOCKET)pParam;
+	char szBuffer[128] = { 0 };
+	while (::recv(recvSocket, szBuffer, sizeof(szBuffer), 0) > 0)
+	{
+		printf("%s\n", szBuffer);
+		memset(szBuffer, 0, sizeof(szBuffer)); // clear buffer
+	}
+
+	puts("receive thread over.");
+	return 0;
+}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -41,6 +58,18 @@ int _tmain(int argc, _TCHAR* argv[])
 		fflush(stdout);
 	}
 
+	// create new theread - message receiver
+	// why? because you don't know when you receive message from server(async)
+	DWORD dwThreadID = 0;
+	HANDLE recvThread = CreateThread(
+		NULL,
+		0,
+		threadFunction,
+		(LPVOID)hSocket,
+		0,
+		&dwThreadID);
+	::CloseHandle(recvThread);
+
 	// 3. messsage send and receive
 	char szBuffer[128] = { 0 }; // buffer size
 	while (1)
@@ -49,22 +78,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (strcmp(szBuffer, "EXIT") == 0)		
 			break;
 
-		// send message to server
+		// main thread does connecting server and sending message
 		// size + 1 because last character of string is 'null'
 		::send(hSocket, szBuffer, strlen(szBuffer) + 1, 0);
-		// clear buffer
-		memset(szBuffer, 0, sizeof(szBuffer)); 
-		// receive echo message from the server
-		// echo message size is fixed to 128 byte, refer server code ::send 
-		::recv(hSocket, szBuffer, sizeof(szBuffer), 0);
 		std::cout << "\x1b[1A"; // move cursor to upper line
 		std::cout << "\x1b[2K"; // delete the entered line
-		printf("\n", szBuffer); // print message echoed from the server. make it clean!
+		// clear buffer
+		memset(szBuffer, 0, sizeof(szBuffer));
+
 	}
 
 	// 5. close listening socket
 	::closesocket(hSocket);
-
+	::Sleep(100);
 	// 0. clear winsock
 	::WSACleanup();
 	return 0;
