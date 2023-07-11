@@ -3,6 +3,7 @@
 #include <Ws2tcpip.h>
 #include <iostream>
 #include <stdio.h>
+//#include <string>
 #pragma comment(lib, "ws2_32")
 //#pragma warning(disable:4996) 
 
@@ -10,15 +11,23 @@
 // message size is fixed to 128 byte, refer server code ::send 
 DWORD WINAPI threadFunction(LPVOID pParam)
 {
-	SOCKET recvSocket = (SOCKET)pParam;
+	SOCKET hSocket = (SOCKET)pParam;
 	char szBuffer[128] = { 0 };
-	while (::recv(recvSocket, szBuffer, sizeof(szBuffer), 0) > 0)
+	while (::recv(hSocket, szBuffer, sizeof(szBuffer), 0) > 0)
 	{
-		printf("%s\n", szBuffer);
-		memset(szBuffer, 0, sizeof(szBuffer)); // clear buffer
+		if (std::string(szBuffer) == "ping")
+		{
+			printf("%s\n", "ping received");
+			::send(hSocket, "pong", 5, 0);
+		}
+		else
+		{
+			printf("%s\n", szBuffer);
+			memset(szBuffer, 0, sizeof(szBuffer)); // clear buffer
+		}
 	}
 
-	puts("receive thread over.");
+	puts("receiver thread over.");
 	return 0;
 }
 
@@ -58,7 +67,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		fflush(stdout);
 	}
 
-	// create new theread - message receiver
+	// create one extra theread(message receiver) per client 
 	// why? because you don't know when you receive message from server(async)
 	DWORD dwThreadID = 0;
 	HANDLE recvThread = CreateThread(
